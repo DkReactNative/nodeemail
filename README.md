@@ -11,4 +11,4 @@ run node index.js
 When you run the code for the first time, you will have to follow the link that shows up in the terminal. 
 Allow the application the permissions it needs. You will now get a key, 
 paste it in the terminal and hit enter
-now run node index.js
+
