@@ -2,14 +2,15 @@ const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
 var base64 = require('js-base64').Base64;
-const cheerio = require('cheerio');
-var Mailparser = require('mailparser').MailParser;
+
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/gmail.readonly'];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
 const TOKEN_PATH = 'token.json';
+
+const myEmail='dkgarhwal366@gmail.com'
 
 // Load client secrets from a local file.
 fs.readFile('credentials.json', (err, content) => {
@@ -68,46 +69,25 @@ function getNewToken(oAuth2Client, callback) {
   });
 }
 
-/**
- * Lists the labels in the user's account.
- *
- * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
- */
-function listLabels(auth) {
-  const gmail = google.gmail({version: 'v1', auth});
-  gmail.users.labels.list({
-    userId: 'me',
-  }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
-    const labels = res.data.labels;
-    if (labels.length) {
-      console.log('Labels:');
-      getAuth(auth)
-      labels.forEach((label) => {
-        console.log(`- ${label.name}`);
-      });
-    } else {
-      console.log('No labels found.');
-    }
-  });
-}
 
 
 function checkInbox(auth){
     let gmail = google.gmail({version: 'v1', auth});
         gmail.users.messages.list({
-        userId: 'dkgarhwal366@gmail.com',
+        userId: myEmail,
         labelIds: 'INBOX',
         maxResults: 10
     }, (err, res) => {
         if(!err){
-             console.log(res)
             //mail array stores the mails.
             var mails = res.data.messages;
-              console.log(mails)
+            fs.writeFile('response.json', JSON.stringify(mails), (err)=> {
+                if (err) throw err;
+                console.log('Saved!');
+              });
             //We call the getMail function passing the id of first mail as parameter.
-            mails.forEach(ele=>{
-                getMail(ele.id,gmail);
+            mails.forEach((ele,i)=>{
+                getMail(ele.id,gmail,i);
             })
             
         }
@@ -116,23 +96,24 @@ function checkInbox(auth){
         }
     });        
 }
-//getMail function retrieves the mail body and parses it for useful content.
+    
+     //getMail function retrieves the mail body and parses it for useful content.
     //In our case it will parse for all the links in the mail.
-   function  getMail(msgId,gmail){
+   function  getMail(msgId,gmail,i){
         
         //This api call will fetch the mailbody.
         gmail.users.messages.get({
-            'userId': 'dkgarhwal366@gmail.com',
+            'userId': myEmail,
             'id': msgId
         }, (err, res) => {
             if(!err){
-                console.log(res)
-                var body = res.data.payload.parts[0].body.data;
-                var htmlBody = base64.decode(body.replace(/-/g, '+').replace(/_/g, '/'));
-                var mailparser = new Mailparser();
-                console.log(htmlBody)
-                mailparser.write(htmlBody);
-                mailparser.end();
+                
+                var body = res.data.payload.body.data;
+                var htmlBody = base64.decode(body);
+                fs.writeFile(`body${i}.html`, htmlBody, (err)=> {
+                    if (err) throw err;
+                    console.log('Saved!');
+                  });
                 
             }
         });
